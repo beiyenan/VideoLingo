@@ -11,10 +11,10 @@ display_language: "zh-CN"
 
 # API settings
 api:
-  key: 'YOUR_API_KEY'
-  base_url: 'https://api.openlux.ai/v1'
-  model: 'gpt-6-luna'
-  llm_support_json: false
+  key: 'YOUR_AGNES_API_KEY'
+  base_url: 'https://apihub.agnes-ai.com/v1'
+  model: 'agnes-3.0-flash'
+  llm_support_json: true
 # *Number of LLM multi-threaded accesses, set to 1 if using local LLM
 max_workers: 4
 
@@ -28,8 +28,14 @@ whisper:
   # Recognition language ISO 639-1, or "auto"
   language: 'en'
   detected_language: 'en'
-  # Recognition runtime: "local" (default), "elevenlabs" or "mai" (MAI-Transcribe-2).
-  runtime: 'local'
+  # Recognition runtime: "local" (default), "elevenlabs", "mai" (MAI-Transcribe-2)
+  # or "siliconflow" (cloud, e.g. the free XingChenAGI/XingChenASR-V3.2-Ultra).
+  runtime: 'siliconflow'
+  # SiliconFlow cloud ASR. Leave the key empty to fall back to the
+  # SILICONFLOW_API_KEY environment variable.
+  siliconflow_api_key: 'YOUR_SILICONFLOW_API_KEY'
+  siliconflow_base_url: 'https://api.siliconflow.cn/v1'
+  siliconflow_model: 'XingChenAGI/XingChenASR-V3.2-Ultra'
   # Local ASR backend: "qwen" (default: Qwen3-ASR + Qwen3-ForcedAligner-0.6B) or "whisperx".
   # whisperx is not installed by the installer. Install its packages yourself from
   # docs/pages/docs/whisperx-manual.en-US.md, then set backend to whisperx.
@@ -53,7 +59,7 @@ whisper:
   mai_openrouter_api_key: ''
 
 # Whether to burn subtitles into the video
-burn_subtitles: true
+burn_subtitles: false
 
 ## ======================== Advanced Settings ======================== ##
 # *🔬 h264_nvenc GPU acceleration for ffmpeg, make sure your GPU supports it
@@ -111,7 +117,23 @@ pause_after_translate: false
 
 ## ======================== Dubbing Settings ======================== ##
 # TTS selection [edge_tts, openai_tts, fish_audio, f5tts, sf_fish_tts, sf_cosyvoice2, gpt_sovits, custom_tts]
-tts_method: 'edge_tts'
+tts_method: 'custom_tts'
+
+# Local VoxCPM2 (Chinese TTS, runs via a persistent worker on E:\VoxCPM).
+# Used when tts_method is 'custom_tts'.
+voxcpm:
+  # VoxCPM2 安装根目录（含 models/ 和 venv/ 的那一层）
+  root: 'E:\VoxCPM'
+  # 参考音频模式（对应侧边栏下拉）：
+  #   1 = 用你自己指定的音频文件（reference_wav），跨视频固定音色
+  #   2 = 用本视频第一段人声（refers/1.wav），每个视频自动获得各自的音色
+  #   3 = 每句用自己那段原声（refers/<序号>.wav），适合多人对话
+  #   4 = 不用参考音频，每句都是不同的随机音色
+  refer_mode: 2
+  # 仅模式 1 会读取这个路径。
+  reference_wav: 'E:\VoxCPM\vl_reference_voice.wav'
+  cfg_value: 2.0
+  inference_timesteps: 10
 
 # SiliconFlow FishTTS
 sf_fish_tts:
@@ -130,7 +152,7 @@ openai_tts:
   api_key: 'YOUR_302_API_KEY'
   voice: 'alloy'
   # *Base URL and model of the speech endpoint
-  base_url: 'https://api.openlux.ai/v1'
+  base_url: 'https://apihub.agnes-ai.com/v1'
   model: 'gpt-4o-mini-tts'
 
 # Fish Audio, the official API (https://fish.audio)

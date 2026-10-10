@@ -37,8 +37,8 @@ def prepare_audio(media_file, media_type, demucs):
 @check_file_exists(_2_CLEANED_CHUNKS)
 def transcribe():
     runtime = load_key("whisper.runtime")
-    if runtime not in ("local", "elevenlabs", "mai"):
-        raise ValueError("Select local, elevenlabs or mai for whisper.runtime. The 302.ai WhisperX cloud service has been retired.")
+    if runtime not in ("local", "elevenlabs", "mai", "siliconflow"):
+        raise ValueError("Select local, elevenlabs, mai or siliconflow for whisper.runtime. The 302.ai WhisperX cloud service has been retired.")
     if runtime == "local" and local_backend(load_key("whisper")) == "whisperx":
         from importlib.util import find_spec
         if find_spec("whisperx") is None:
@@ -90,6 +90,9 @@ def transcribe():
     elif runtime == "mai":
         from core.asr_backend.mai_asr import transcribe_audio_mai as ts, selected_provider
         rprint(f"[cyan]🎤 Transcribing audio with MAI-Transcribe-2 via {selected_provider()}...[/cyan]")
+    elif runtime == "siliconflow":
+        from core.asr_backend.siliconflow_asr import transcribe_audio_siliconflow as ts, _sf_model
+        rprint(f"[cyan]🎤 Transcribing audio with SiliconFlow {_sf_model()}...[/cyan]")
     else:
         raise ValueError(f"Unsupported ASR runtime: {runtime}")
 

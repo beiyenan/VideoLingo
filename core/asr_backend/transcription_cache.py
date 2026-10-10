@@ -15,6 +15,9 @@ CACHE_DIR = Path(".cache/asr")
 # 3: Qwen alignment preserves original Unicode characters after token normalization.
 # 4: Qwen windows exclude non-speech edges before transcription and alignment.
 SCHEMA = 4
+# SiliconFlow text normalisation (quote stripping) changes the transcript shape,
+# so cached results produced before that fix must not be reused.
+SILICONFLOW_IDENTITY = "sf-asr-normalise-quotes-v2-wordlevel"
 
 
 def cache_key(media_file, whisper, demucs):
@@ -58,6 +61,12 @@ def cache_key(media_file, whisper, demucs):
         # Local backend + Qwen size/engine so WhisperX and Qwen results never collide.
         "backend": backend, "qwen_model": whisper.get("qwen_model"),
         "qwen_engine": whisper.get("qwen_engine"),
+        # Cloud backends whose output shape depends on their own implementation.
+        "elevenlabs": SILICONFLOW_IDENTITY if whisper["runtime"] == "elevenlabs" else None,
+        "siliconflow": (SILICONFLOW_IDENTITY,
+                        whisper.get("siliconflow_model"),
+                        whisper.get("siliconflow_base_url"))
+                       if whisper["runtime"] == "siliconflow" else None,
     }
     return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
 

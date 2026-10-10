@@ -7,9 +7,14 @@ from core.utils import *
 from core.utils.ask_gpt import is_local_endpoint, normalize_base_url
 
 
-def config_input(label, key, help=None, placeholder=None):
-    """Generic config input handler"""
-    val = st.text_input(label, value=load_key(key), help=help, placeholder=placeholder)
+def config_input(label, key, help=None, placeholder=None, secret=False):
+    """Generic config input handler.
+
+    `secret=True` masks the value, for API keys that would otherwise sit in
+    plain text on screen (and in screenshots).
+    """
+    val = st.text_input(label, value=load_key(key), help=help, placeholder=placeholder,
+                        type="password" if secret else "default")
     if val != load_key(key):
         update_key(key, val)
     return val
@@ -222,7 +227,7 @@ def page_setting():
                 update_key("whisper.language", langs[lang])
                 st.rerun()
 
-        runtimes = ["local", "elevenlabs", "mai"]
+        runtimes = ["local", "elevenlabs", "mai", "siliconflow"]
         configured_runtime = load_key("whisper.runtime")
         if configured_runtime not in runtimes:
             st.warning(t("The 302.ai WhisperX cloud service has been retired. Select Local or ElevenLabs to continue."))
@@ -234,6 +239,7 @@ def page_setting():
                 "local": t("Local"),
                 "elevenlabs": t("ElevenLabs"),
                 "mai": t("MAI-Transcribe-2"),
+                "siliconflow": t("SiliconFlow (cloud)"),
             }[x],
             help=t(
                 "Local Qwen3-ASR runs best on an NVIDIA GPU or Apple Silicon (CPU works but is slow); cloud recognition requires a provider API key."
@@ -260,7 +266,13 @@ def page_setting():
             if backend == "whisperx" and importlib.util.find_spec("whisperx") is None:
                 st.warning(t("WhisperX is not installed. Follow the manual page (docs/pages/docs/whisperx-manual.en-US.md) and install the extra packages yourself, or set whisper.backend to qwen."))
         if runtime == "elevenlabs":
-            config_input(t("ElevenLabs API"), "whisper.elevenlabs_api_key")
+            config_input(t("ElevenLabs API"), "whisper.elevenlabs_api_key", secret=True)
+        elif runtime == "siliconflow":
+            config_input(t("SiliconFlow API (blank = use SILICONFLOW_API_KEY env)"), "whisper.siliconflow_api_key",
+                         help=t("Leave empty to fall back to the SILICONFLOW_API_KEY environment variable."),
+                         secret=True)
+            config_input(t("SiliconFlow ASR Model"), "whisper.siliconflow_model")
+            st.caption(t("Audio is uploaded to SiliconFlow for recognition. Free models (e.g. XingChenASR) cost nothing."))
         elif runtime == "mai":
             from core.asr_backend.mai_asr import detect_region
 

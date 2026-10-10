@@ -56,6 +56,26 @@ def show_difference(str1, str2):
     print("Position markers: " + "".join("^" if i in diff_positions else " " for i in range(max(len(str1), len(str2)))))
     print(f"Difference indices: {diff_positions}")
 
+ASR_QUOTE_CHARS = '"\'“”‘’「」『』'
+
+
+def _match_key(text):
+    """Normalise text before substring matching.
+
+    remove_punctuation() does not strip quote characters, but some cloud ASR
+    backends wrap every segment in quotes ("We did that."). Callers clean only
+    one side of the comparison (e.g. _4_2_translate strips quotes from the word
+    column but not from the Source sentences), which makes an exact match
+    impossible. Normalising here keeps both sides consistent regardless of what
+    the ASR backend returned.
+    """
+    text = "" if text is None else str(text)
+    for ch in ASR_QUOTE_CHARS:
+        text = text.replace(ch, "")
+    text = remove_punctuation(text.lower()).replace(" ", "")
+    return text
+
+
 def get_sentence_timestamps(df_words, df_sentences):
     time_stamp_list = []
     
@@ -64,7 +84,7 @@ def get_sentence_timestamps(df_words, df_sentences):
     position_to_word_idx = {}
     
     for idx, word in enumerate(df_words['text']):
-        clean_word = remove_punctuation(word.lower())
+        clean_word = _match_key(word)
         start_pos = len(full_words_str)
         full_words_str += clean_word
         for pos in range(start_pos, len(full_words_str)):
@@ -72,7 +92,7 @@ def get_sentence_timestamps(df_words, df_sentences):
     
     current_pos = 0
     for idx, sentence in df_sentences['Source'].items():
-        clean_sentence = remove_punctuation(sentence.lower()).replace(" ", "")
+        clean_sentence = _match_key(sentence)
         sentence_len = len(clean_sentence)
 
         # A line with nothing but punctuation has no words to match; place it after the loop

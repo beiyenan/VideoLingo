@@ -108,4 +108,73 @@ def select_tts_method(labels):
             if st.button(t("Use this key for all methods"), key=f"tts_share_{chosen}"):
                 save_provider_key(chosen, value)
                 st.rerun()
+    # GPT-SoVITS needs a separate server next to the repo; warn instead of
+    # letting the run fail deep inside the pipeline with a directory error.
+    if selected == "gpt_sovits":
+        from pathlib import Path as _Path
+        _repo = _Path(__file__).resolve().parent.parent.parent.parent
+        _has = any(d.is_dir() and d.name.startswith("GPT-SoVITS-v2") for d in _repo.iterdir())
+        if not _has:
+            st.warning(t("GPT-SoVITS was not found next to the VideoLingo folder "
+                         "(expected a GPT-SoVITS-v2* directory in %s). This method will fail. "
+                         "Use Custom provider to drive a local model such as VoxCPM2.") % _repo)
+    # VoxCPM2 runs locally through a persistent worker: no API key, but a few
+    # generation parameters are worth exposing next to the provider picker.
+    if selected == "custom_tts":
+        from core.utils.config_utils import load_key_or as _lko
+        st.markdown(f"**{t('VoxCPM reference audio mode')}**")
+        _mode_options = {
+            1: t("Mode 1: Use the audio file you specify"),
+            2: t("Mode 2: Use the first audio clip of this video"),
+            3: t("Mode 3: Use each line's own audio clip as reference"),
+            4: t("Mode 4: No reference (a new random voice per line)"),
+        }
+        _mode = st.selectbox(
+            t("Refer Mode"),
+            options=list(_mode_options.keys()),
+            format_func=lambda x: _mode_options[x],
+            index=list(_mode_options.keys()).index(int(_lko("voxcpm.refer_mode", 2) or 2))
+            if int(_lko("voxcpm.refer_mode", 2) or 2) in _mode_options else 1,
+            help=t("Mode 1 keeps one fixed voice across videos. Mode 2 clones this "
+                  "video's first speaker so every video gets its own voice. "
+                  "Mode 3 follows the original speaker line by line, which suits "
+                  "interviews. Mode 4 has no reference at all, so every line is "
+                  "spoken in a different random voice."),
+        )
+        if _mode != int(_lko("voxcpm.refer_mode", 2) or 2):
+            save_settings({"voxcpm.refer_mode": _mode})
+            st.rerun()
+        _ref = st.text_input(
+            t("VoxCPM reference audio (used by Mode 1)"),
+            value=_lko("voxcpm.reference_wav", ""),
+            help=t("Give a 5-15s clean single-speaker clip. This path is only read in Mode 1; "
+                  "the other modes take their reference from the video being processed."),
+        )
+        if _mode == 1 and not str(_lko("voxcpm.reference_wav", "") or "").strip():
+            st.warning(t("Mode 1 needs a reference audio file, otherwise every line will be "
+                          "spoken in a different random voice."))
+        if _ref != _lko("voxcpm.reference_wav", ""):
+            save_settings({"voxcpm.reference_wav": _ref})
+            st.rerun()
+        _cfg = st.slider(t("VoxCPM CFG strength"), 0.5, 5.0,
+                         float(_lko("voxcpm.cfg_value", 2.0)), 0.1)
+        if abs(_cfg - float(_lko("voxcpm.cfg_value", 2.0))) > 1e-6:
+            save_settings({"voxcpm.cfg_value": _cfg})
+            st.rerun()
+        _root = st.text_input(
+            t("VoxCPM install folder"),
+            value=str(_lko("voxcpm.root", "")),
+            help=t("The folder that contains the VoxCPM2 models/ and venv/ directories. "
+                   "Changing it takes effect after restarting VideoLingo."),
+        )
+        if _root != str(_lko("voxcpm.root", "")):
+            save_settings({"voxcpm.root": _root})
+            st.rerun()
+        _steps = st.slider(t("VoxCPM inference steps"), 4, 30,
+                           int(_lko("voxcpm.inference_timesteps", 10)), 1)
+        if _steps != int(_lko("voxcpm.inference_timesteps", 10)):
+            save_settings({"voxcpm.inference_timesteps": _steps})
+            st.rerun()
+        st.caption(t("Local VoxCPM2 keeps a worker process warm; the first line after a "
+                     "restart spends ~30s loading the model, later lines take ~10s each."))
     return selected

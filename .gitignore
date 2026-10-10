@@ -174,3 +174,10 @@ installer_files/
 logs/
 videolingo_*.log
 .tools/
+
+# Local launcher scripts with machine-specific absolute paths
+run.bat
+open_browser.bat
+
+# Local config holding real API keys
+config.yaml.local
