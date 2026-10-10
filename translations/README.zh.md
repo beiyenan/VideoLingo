@@ -12,6 +12,56 @@
 
 </div>
 
+---
+
+## 📌 本 Fork 的改动（beiyenan/VideoLingo）
+
+本仓库基于 [Huanshere/VideoLingo](https://github.com/Huanshere/VideoLingo)，目标是把**语音识别放到云端**、**配音留在本地**，让 8GB 显存的机器不必在 ASR 与 TTS 之间来回抢显存，同时全程零配音 API 费用。
+
+> 下方内容为上游原始文档，未作改动。
+
+### 新增：SiliconFlow 云端语音识别
+
+- **模型**：`XingChenAGI/XingChenASR-V3.2-Ultra`（免费层），侧边栏「语音识别运行环境」选择 `SiliconFlow（云端）`
+- **为什么**：本地 Qwen3-ASR 会占用显存，与本地 TTS 冲突。云端识别后 GPU 只需服务配音
+- **配置**：`api.key` 填 SiliconFlow API Key，或留空回退到环境变量 `SILICONFLOW_API_KEY`
+- **注意**：音频会上传到 SiliconFlow；该免费模型不产生费用
+
+### 新增：本地 VoxCPM2 配音
+
+- **模型**：[VoxCPM2](https://github.com/OpenBMB/VoxCPM)（2B，48kHz，支持音色克隆与跨语言克隆）
+- **常驻 worker**：模型只加载一次，整个视频复用。重启后第一句约 30 秒加载，之后每句约 10 秒
+- **安装目录**：通过配置项 `voxcpm.root` 指定（含 `models/` 和 `venv/` 的那一层文件夹），也可在侧边栏填写
+
+#### 参考音频模式（关键）
+
+VoxCPM2 需要一段参考音频来克隆音色。**留空时模型会为每一句随机采样一个新说话人**，听起来就是「每句配音都是不同的人」。侧边栏「参考音频模式」提供四个选项：
+
+| 模式 | 参考来源 | 适用场景 |
+|---|---|---|
+| **1** | 你自己指定的音频文件（`voxcpm.reference_wav`） | 想要一个固定「主播音色」，配任何片子都是同一人 |
+| **2**（默认） | 本视频的第一段人声（`output/audio/refers/1.wav`） | 每个视频自动获得自己的音色，**换视频无需改配置** |
+| **3** | 每句用它自己那段的原声（`output/audio/refers/<序号>.wav`） | 多人对话 / 访谈类，保住各自说话人的音色 |
+| **4** | 不使用参考音频 | 排查问题用 |
+
+模式 2、3 依赖「提取参考音频」步骤生成的片段；若目录为空会**明确报错**而非静默降级。
+
+### 修复
+
+| 问题 | 原因 |
+|---|---|
+| 长视频只译出零星几句 | SiliconFlow 只返回句级时间戳，`process_transcription()` 把整句当作一个「词」，被 30 字符上限静默丢弃。现已按字符比例合成词级时间戳 |
+| 字幕对不上时间轴 | 云端返回的每段带引号，与下游匹配逻辑不一致。现已在 ASR 层统一归一化 |
+| 字幕匹配失败（`No match found for sentence`） | 词级与句级用了不同的归一化函数。现共用同一个 `_match_key()` |
+| API Key 在页面上明文显示 | 密钥输入框改为掩码显示 |
+
+### 其他
+
+- 侧边栏中文文案补全（`translations/zh-CN.json`），避免漏译时静默退回英文
+- `config.yaml` 中 API Key 均为占位符，请填入你自己的 Key（**不要把真实 Key 提交到仓库**）
+
+---
+
 ## 🌟 简介（[在线体验！](https://videolingo.io)）
 
 VideoLingo 在 Streamlit 界面中整合语音识别、字幕翻译、分句和配音，可生成字幕文件，以及可选的字幕视频或配音视频。翻译质量取决于原始音频、语言和所选模型。
@@ -129,8 +179,8 @@ uv run start.py --api
 ## LLM、语音识别与配音服务
 本项目支持 OpenAI-Like 格式的 api 和多种配音接口：
 - LLM：自行选择兼容 OpenAI Chat Completions、能够返回流程所需结构化 JSON 的服务和模型。推荐 [OpenLux](https://www.openlux.ai/register?aff=wKYu) 中转，API 地址填 `https://api.openlux.ai/v1`。默认性价比高用 GPT-6 Luna，模型 ID 填 `gpt-6-luna`；质量更好用 GPT-6 Sol，模型 ID 填 `gpt-6-sol`；质量最好用 Claude Opus 5.5，模型 ID 填 `claude-opus-5-5`。OpenLux 中转约价见安装文档。在侧栏配置 API 地址、密钥和模型。
-- 语音识别：本地运行 Qwen3-ASR + ForcedAligner（默认），或在侧栏选择 ElevenLabs、MAI-Transcribe-2。MAI 可使用 Azure Speech 密钥或 OpenRouter 密钥（在侧栏填写）；音频会发送到选定的服务商，可能产生费用。安装器不会安装 WhisperX；若要把它当作后端，见 [WhisperX（手动安装）](../docs/pages/docs/whisperx-manual.zh-CN.md)。
-- TTS：OpenAI、Fish Audio、SiliconFlow Fish/CosyVoice2、GPT-SoVITS、Edge TTS、F5-TTS，以及 `core/tts_backend/custom_tts.py` 中的自定义适配器。
+- 语音识别：本地运行 Qwen3-ASR + ForcedAligner（默认），或在侧栏选择 SiliconFlow 云端识别、ElevenLabs、MAI-Transcribe-2。MAI 可使用 Azure Speech 密钥或 OpenRouter 密钥（在侧栏填写）；音频会发送到选定的服务商，可能产生费用。安装器不会安装 WhisperX；若要把它当作后端，见 [WhisperX（手动安装）](../docs/pages/docs/whisperx-manual.zh-CN.md)。
+- TTS：OpenAI、Fish Audio、SiliconFlow Fish/CosyVoice2、GPT-SoVITS、Edge TTS、F5-TTS、本地 VoxCPM2（本 Fork 新增），以及 `core/tts_backend/custom_tts.py` 中的自定义适配器。
 
 详细的安装、LLM 配置和使用说明可以参见文档：[English](/docs/pages/docs/start.en-US.md) | [简体中文](/docs/pages/docs/start.zh-CN.md)
 

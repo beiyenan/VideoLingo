@@ -10,6 +10,56 @@
 
 </div>
 
+---
+
+## 📌 本 Fork 的改动（beiyenan/VideoLingo）
+
+本仓库基于 [Huanshere/VideoLingo](https://github.com/Huanshere/VideoLingo)，目标是把**语音识别放到云端**、**配音留在本地**，让 8GB 显存的机器不必在 ASR 与 TTS 之间来回抢显存，同时全程零配音 API 费用。
+
+> 下方内容为上游原始文档，未作改动。
+
+### 新增：SiliconFlow 云端语音识别
+
+- **模型**：`XingChenAGI/XingChenASR-V3.2-Ultra`（免费层），侧边栏 `语音识别运行环境` 选择 `SiliconFlow（云端）`
+- **为什么**：本地 Qwen3-ASR 会占用显存，与本地 TTS 冲突。云端识别后 GPU 只需服务配音
+- **配置**：`api.key` 填 SiliconFlow API Key，或留空回退到环境变量 `SILICONFLOW_API_KEY`
+- **注意**：音频会上传到 SiliconFlow；该免费模型不产生费用
+
+### 新增：本地 VoxCPM2 配音
+
+- **模型**：[VoxCPM2](https://github.com/OpenBMB/VoxCPM)（2B，48kHz，支持音色克隆与跨语言克隆）
+- **常驻 worker**：模型只加载一次，整个视频复用。重启后第一句约 30 秒加载，之后每句约 10 秒
+- **安装目录**：通过配置项 `voxcpm.root` 指定（含 `models/` 和 `venv/` 的那一层文件夹），也可在侧边栏填写
+
+#### 参考音频模式（关键）
+
+VoxCPM2 需要一段参考音频来克隆音色。**留空时模型会为每一句随机采样一个新说话人**，听起来就是「每句配音都是不同的人」。侧边栏 `参考音频模式` 提供四个选项：
+
+| 模式 | 参考来源 | 适用场景 |
+|---|---|---|
+| **1** | 你自己指定的音频文件（`voxcpm.reference_wav`） | 想要一个固定「主播音色」，配任何片子都是同一人 |
+| **2**（默认） | 本视频的第一段人声（`output/audio/refers/1.wav`） | 每个视频自动获得自己的音色，**换视频无需改配置** |
+| **3** | 每句用它自己那段的原声（`output/audio/refers/<序号>.wav`） | 多人对话 / 访谈类，保住各自说话人的音色 |
+| **4** | 不使用参考音频 | 排查问题用 |
+
+模式 2、3 依赖「提取参考音频」步骤生成的片段；若目录为空会**明确报错**而非静默降级。
+
+### 修复
+
+| 问题 | 原因 |
+|---|---|
+| 长视频只译出零星几句 | SiliconFlow 只返回句级时间戳，`process_transcription()` 把整句当作一个「词」，被 30 字符上限静默丢弃。现已按字符比例合成词级时间戳 |
+| 字幕对不上时间轴 | 云端返回的每段带引号，与下游匹配逻辑不一致。现已在 ASR 层统一归一化 |
+| 字幕匹配失败 (`No match found for sentence`) | 词级与句级用了不同的归一化函数。现共用同一个 `_match_key()` |
+| API Key 在页面上明文显示 | 密钥输入框改为掩码显示 |
+
+### 其他
+
+- 侧边栏中文文案补全（`translations/zh-CN.json`），避免漏译时静默退回英文
+- `config.yaml` 中 API Key 均为占位符，请填入你自己的 Key（**不要把真实 Key 提交到仓库**）
+
+---
+
 ## 🌟 Overview ([Try VL Now!](https://videolingo.io))
 
 VideoLingo combines speech recognition, subtitle translation, segmentation and dubbing in a Streamlit interface. It produces subtitle files and optionally subtitled or dubbed videos. Translation quality depends on the source audio, language and chosen models.
@@ -127,8 +177,8 @@ retries and serial batch processing. Interactive endpoint docs: [localhost:8000/
 ## LLM, ASR and TTS providers
 VideoLingo supports OpenAI-Like API format and various TTS interfaces:
 - LLM: choose an OpenAI-compatible Chat Completions provider and model that can return the structured JSON required by the workflow. [OpenLux](https://www.openlux.ai/register?aff=wKYu) is recommended; set the API URL to `https://api.openlux.ai/v1`. Prefer GPT-6 Luna with model ID `gpt-6-luna` for best value, GPT-6 Sol with `gpt-6-sol` for better quality, or Claude Opus 5.5 with `claude-opus-5-5` for best quality. OpenLux relay rates are in the install docs. Configure the API URL, key and model in the sidebar.
-- Speech recognition: run Qwen3-ASR + ForcedAligner locally (default), or choose ElevenLabs or MAI-Transcribe-2 in the sidebar. MAI supports an Azure Speech key or an OpenRouter key entered in the sidebar; audio is sent to the selected provider and may incur charges. WhisperX is not installed by the installer; to use it as a backend, follow [WhisperX (manual install)](docs/pages/docs/whisperx-manual.en-US.md).
-- TTS: OpenAI, Fish Audio, SiliconFlow Fish/CosyVoice2, GPT-SoVITS, Edge TTS, F5-TTS and a custom adapter in `core/tts_backend/custom_tts.py`.
+- Speech recognition: run Qwen3-ASR + ForcedAligner locally (default), or choose SiliconFlow cloud ASR, ElevenLabs or MAI-Transcribe-2 in the sidebar. MAI supports an Azure Speech key or an OpenRouter key entered in the sidebar; audio is sent to the selected provider and may incur charges. WhisperX is not installed by the installer; to use it as a backend, follow [WhisperX (manual install)](docs/pages/docs/whisperx-manual.en-US.md).
+- TTS: OpenAI, Fish Audio, SiliconFlow Fish/CosyVoice2, GPT-SoVITS, Edge TTS, F5-TTS, local VoxCPM2 (this fork) and a custom adapter in `core/tts_backend/custom_tts.py`.
 
 For detailed installation, LLM configuration, and usage instructions, please refer to the documentation: [English](/docs/pages/docs/start.en-US.md) | [中文](/docs/pages/docs/start.zh-CN.md)
 
