@@ -60,6 +60,22 @@ VoxCPM2 需要一段参考音频来克隆音色。**留空时模型会为每一�
 - 侧边栏中文文案补全（`translations/zh-CN.json`），避免漏译时静默退回英文
 - `config.yaml` 中 API Key 均为占位符，请填入你自己的 Key（**不要把真实 Key 提交到仓库**）
 
+### Windows 一键启动
+
+双击项目根目录下的 **`run_portable.bat`** 即可：它从脚本自身位置推算项目路径，因此放在任意目录都能用
+（需与 `start.py` 放在同一层）。它会：
+
+1. 探测服务是否已在运行 —— 已在跑就直接打开网页，不会重复启动
+2. 后台等待服务就绪后自动打开浏览器（不是死等固定秒数）
+3. 找不到 `uv` 或放错目录时给出明确提示，而不是一闪而过
+
+```bat
+:: 端口固定在 .streamlit\config.toml，不要用命令行传
+:: uv run --port 8501 ... 会被 uv 拒绝：error: unexpected argument '--port'
+```
+
+在 PowerShell 里启动可用 `.\run_portable.bat`。
+
 ---
 
 ## 🌟 简介（[在线体验！](https://videolingo.io)）
