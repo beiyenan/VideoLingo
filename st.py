@@ -20,6 +20,7 @@ from core.pipeline import get_steps, truncated_dubbing_lines
 from core.utils import load_key, update_key
 from core.utils.onekeycleanup import cleanup
 from core.utils.delete_retry_dubbing import delete_dubbing_files
+from core.st_utils.folder_buttons import output_folder_buttons
 from translations.translations import DISPLAY_LANGUAGES, init_display_language, set_display_language
 from core.utils.models import _TEXT_DONE_MARKER, _AUDIO_DONE_MARKER
 
@@ -258,6 +259,7 @@ def text_processing_section():
             if st.button(t("Archive to 'history'"), key="cleanup_in_text_processing"):
                 cleanup()
                 st.rerun()
+            output_folder_buttons(t, key_prefix="subtitle")
             return True
 
 
@@ -319,6 +321,7 @@ def audio_processing_section():
             if st.button(t("Archive to 'history'"), key="cleanup_in_audio_processing"):
                 cleanup()
                 st.rerun()
+            output_folder_buttons(t, key_prefix="dubbing", select_dub_video=True)
 
 
 # ─── Main ───

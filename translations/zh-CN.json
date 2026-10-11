@@ -268,5 +268,7 @@
   "VoxCPM2 installed, but the worker script could not be written: %s": "VoxCPM2 已安装，但 worker 脚本写入失败：%s",
   "Done": "完成",
   "VoxCPM2 is installed at %s": "VoxCPM2 已安装到 %s",
-  "Restart VideoLingo so the dubbing worker picks up the new install.": "请重启 VideoLingo，让配音 worker 使用新安装的环境。"
+  "Restart VideoLingo so the dubbing worker picks up the new install.": "请重启 VideoLingo，让配音 worker 使用新安装的环境。",
+  "Open the output folder": "打开 output 文件夹",
+  "Open the history folder": "打开 history 文件夹"
 }
