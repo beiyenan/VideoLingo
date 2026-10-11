@@ -20,7 +20,7 @@ from core.pipeline import get_steps, truncated_dubbing_lines
 from core.utils import load_key, update_key
 from core.utils.onekeycleanup import cleanup
 from core.utils.delete_retry_dubbing import delete_dubbing_files
-from core.st_utils.folder_buttons import output_folder_buttons
+from core.st_utils.folder_buttons import folder_actions, handle_action, open_folder, result_actions
 from translations.translations import DISPLAY_LANGUAGES, init_display_language, set_display_language
 from core.utils.models import _TEXT_DONE_MARKER, _AUDIO_DONE_MARKER
 
@@ -256,14 +256,21 @@ def text_processing_section():
                 st.video(SUB_VIDEO)
             download_subtitle_zip_button(text=t("Download All Srt Files"))
 
-            if st.button(t("Archive to 'history'"), key="cleanup_in_text_processing"):
-                cleanup()
+            clicked = result_actions(t, key_prefix="subtitle", allow_delete=False)
+            if handle_action(clicked):
                 st.rerun()
-            output_folder_buttons(t, key_prefix="subtitle")
+            for key in ("open_output", "open_history"):
+                if clicked.get(key):
+                    open_folder("subtitle", key)
             return True
 
 
 # ─── Audio processing ───
+
+
+def _delete_dubbing():
+    _clear_path(_AUDIO_DONE_MARKER)
+    delete_dubbing_files()
 
 
 def audio_processing_section():
@@ -314,14 +321,13 @@ def audio_processing_section():
                 st.warning(t("{n} dubbed line(s) did not fit their time and were cut at the end. They are listed in `output/log/dub_truncated.json`.").replace("{n}", str(len(truncated))))
             if not audio_only and os.path.exists(DUB_VIDEO):
                 st.video(DUB_VIDEO)
-            if st.button(t("Delete dubbing files"), key="delete_dubbing_files"):
-                _clear_path(_AUDIO_DONE_MARKER)
-                delete_dubbing_files()
+
+            clicked = result_actions(t, key_prefix="dubbing", allow_delete=True)
+            if handle_action(clicked, delete_handler=_delete_dubbing):
                 st.rerun()
-            if st.button(t("Archive to 'history'"), key="cleanup_in_audio_processing"):
-                cleanup()
-                st.rerun()
-            output_folder_buttons(t, key_prefix="dubbing", select_dub_video=True)
+            for key in ("open_output", "open_history"):
+                if clicked.get(key):
+                    open_folder("dubbing", key, select_dub_video=True)
 
 
 # ─── Main ───

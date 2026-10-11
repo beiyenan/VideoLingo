@@ -4,10 +4,13 @@ Streamlit serves a web page, so a finished video is invisible to the user until
 they go looking for the path. These helpers reveal `output/` and `history/` in
 Explorer (or the Linux/macOS equivalent).
 
-Windows uses `explorer.exe`, which returns exit code 1 even on success and
-prints nothing; the flag `/select,` opens the parent with the item highlighted.
-Everything here is best-effort: a failure is reported to the caller rather than
-raised, because the folder path is still useful to show as text.
+Two Windows quirks drive the implementation:
+
+- `explorer.exe` returns exit code 1 even on success and prints nothing, so its
+  return code cannot be used to decide whether anything happened. Instead the
+  folder is probed after the call, and the caller gets honest wording.
+- `/select,` only accepts an absolute path. Given a relative one Explorer
+  silently does nothing, which looks exactly like a broken button.
 """
 
 from __future__ import annotations
@@ -16,15 +19,18 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
 def reveal_folder(path: str | os.PathLike, select: str | os.PathLike | None = None) -> tuple[bool, str]:
-    """Open `path` in the file browser. Returns (ok, message)."""
-    target = Path(path)
+    """Open `path` in the file browser. Returns (ok, message).
 
-    # A folder that is not there yet can still be created: the next run will
-    # populate it, and the user should be able to see where it will land.
+    `ok` reflects something observable -- the target exists and the launcher was
+    found -- not Explorer's exit code, which is meaningless.
+    """
+    target = Path(path).resolve()
+
     created = False
     if not target.exists():
         try:
@@ -33,7 +39,7 @@ def reveal_folder(path: str | os.PathLike, select: str | os.PathLike | None = No
         except OSError as exc:
             return False, f"Could not create {target}: {exc}"
 
-    item = Path(select) if select else None
+    item = Path(select).resolve() if select else None
     if item is not None and not item.exists():
         item = None
 
@@ -48,12 +54,14 @@ def reveal_folder(path: str | os.PathLike, select: str | os.PathLike | None = No
 def _reveal_windows(target: Path, item: Path | None, created: bool) -> tuple[bool, str]:
     explorer = shutil.which("explorer") or "explorer.exe"
     if item is not None:
-        # explorer treats its first argument as a path even when it starts
-        # with /select, and it always exits with 1, so the return code is
-        # deliberately ignored here.
+        # Must be absolute, and the comma belongs to the switch.
         subprocess.Popen([explorer, f"/select,{item}"])
-        return True, f"Opened {item} in Explorer."
+        # Explorer is asynchronous; a short pause lets the window come up
+        # before the user looks at the screen.
+        time.sleep(0.35)
+        return True, f"Explorer should now be open with {item.name} selected."
     subprocess.Popen([explorer, str(target)])
+    time.sleep(0.35)
     note = "Created it and opened it." if created else "Opened it."
     return True, f"{note} ({target})"
 
@@ -61,7 +69,7 @@ def _reveal_windows(target: Path, item: Path | None, created: bool) -> tuple[boo
 def _reveal_posix(target: Path, created: bool) -> tuple[bool, str]:
     opener = "open" if sys.platform == "darwin" else "xdg-open"
     if not shutil.which(opener):
-        return False, f"{opener} is not available; the folder is at {target}"
+        return False, f"{opener} is not available on this system. The folder is at {target}"
     subprocess.Popen([opener, str(target)])
     note = "Created it and opened it." if created else "Opened it."
     return True, f"{note} ({target})"
