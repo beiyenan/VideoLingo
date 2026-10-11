@@ -1,4 +1,7 @@
 [server]
+# Pin the port so repeated launches never drift to 8502/8503.
+port = 8501
+headless = true
 maxUploadSize = 4096
 fileWatcherType = "none"
 
