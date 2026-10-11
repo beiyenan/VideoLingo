@@ -254,5 +254,19 @@
   "Give a 5-15s clean single-speaker clip. This path is only read in Mode 1; the other modes take their reference from the video being processed.": "填一段 5-15 秒、单人清晰朗读的音频。此路径仅在模式 1 下生效；其他模式会自行从正在处理的视频里取参考音频。",
   "Mode 1 needs a reference audio file, otherwise every line will be spoken in a different random voice.": "模式 1 需要指定参考音频文件，否则每句都会是不同的随机音色。",
   "VoxCPM install folder": "VoxCPM 安装目录",
-  "The folder that contains the VoxCPM2 models/ and venv/ directories. Changing it takes effect after restarting VideoLingo.": "包含 VoxCPM2 的 models/ 和 venv/ 目录的那一层文件夹。修改后需要重启 VideoLingo 才会生效。"
+  "The folder that contains the VoxCPM2 models/ and venv/ directories. Changing it takes effect after restarting VideoLingo.": "包含 VoxCPM2 的 models/ 和 venv/ 目录的那一层文件夹。修改后需要重启 VideoLingo 才会生效。",
+  "VoxCPM2 is ready at %s": "VoxCPM2 已就绪：%s",
+  "VoxCPM2 is installed, but its worker script is missing. Click repair to write it again.": "VoxCPM2 已安装，但缺少 worker 脚本。点击「修复」重新写入。",
+  "VoxCPM2 is not installed yet. Installing it downloads about 5 GB (PyTorch plus model weights). Everything else in VideoLingo works without it.": "尚未安装 VoxCPM2。安装需要下载约 5 GB（PyTorch 加上模型权重）。不装也不影响 VideoLingo 的其他功能。",
+  "The VoxCPM2 packages are installed but the model weights are missing. Repair downloads them.": "VoxCPM2 的 Python 包已装好，但缺少模型权重。点击「修复」将重新下载。",
+  "Install VoxCPM2 now": "立即安装 VoxCPM2",
+  "Repair VoxCPM2": "修复 VoxCPM2",
+  "Preparing...": "准备中…",
+  "VoxCPM2 installation failed: %s": "VoxCPM2 安装失败：%s",
+  "This does not affect the rest of VideoLingo. You can retry later, or set voxcpm.root in config.yaml to an existing install.": "这不会影响 VideoLingo 的其他功能。你可以稍后重试，或在 config.yaml 里把 voxcpm.root 指向已有的安装目录。",
+  "VoxCPM2 installation failed unexpectedly: %s": "VoxCPM2 安装意外失败：%s",
+  "VoxCPM2 installed, but the worker script could not be written: %s": "VoxCPM2 已安装，但 worker 脚本写入失败：%s",
+  "Done": "完成",
+  "VoxCPM2 is installed at %s": "VoxCPM2 已安装到 %s",
+  "Restart VideoLingo so the dubbing worker picks up the new install.": "请重启 VideoLingo，让配音 worker 使用新安装的环境。"
 }

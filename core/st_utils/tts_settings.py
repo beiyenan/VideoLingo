@@ -26,6 +26,103 @@ KEY_PATHS = {
 TRANSLATED_PROVIDERS = {"Local service", "Custom provider"}
 
 
+def voxcpm_status(root):
+    """Where the local VoxCPM2 install stands for the folder in `root`.
+
+    Returns (ready, python_or_None, worker_present, note).
+    """
+    from pathlib import Path
+    from core.tts_backend import voxcpm_installer as vi
+    try:
+        base = Path(root) if root else vi.default_root()
+    except Exception:
+        return False, None, False, ""
+    python = vi.venv_python(base)
+    if not python.is_file():
+        return False, None, False, ""
+    if not vi._models_present(base / "models"):
+        return False, python, False, "models"
+    return True, python, vi.worker_script(base).is_file(), ""
+
+
+def _voxcpm_install_panel(root_value):
+    """Install/repair control for the local VoxCPM2 runtime.
+
+    Everything here is optional: a failure is shown and nothing else about
+    VideoLingo is affected.
+    """
+    import time as _time
+    from core.utils.config_utils import load_key_or as _lko
+    from translations.translations import translate as _t
+    from core.tts_backend import voxcpm_installer as vi
+
+    ready, python, worker_present, missing = voxcpm_status(root_value)
+    if ready and worker_present:
+        st.success(_t("VoxCPM2 is ready at %s") % (root_value or str(vi.default_root())))
+        return
+    if ready and not worker_present:
+        st.warning(_t("VoxCPM2 is installed, but its worker script is missing. "
+                      "Click repair to write it again."))
+    else:
+        st.info(_t("VoxCPM2 is not installed yet. Installing it downloads about 5 GB "
+                   "(PyTorch plus model weights). Everything else in VideoLingo works "
+                   "without it."))
+        if missing == "models":
+            st.warning(_t("The VoxCPM2 packages are installed but the model weights are "
+                          "missing. Repair downloads them."))
+
+    target = root_value.strip() or str(vi.default_root())
+    action_label = _t("Repair VoxCPM2") if ready else _t("Install VoxCPM2 now")
+    if not st.button(action_label, key="voxcpm_install", width="stretch"):
+        return
+
+    progress = st.progress(0.0, text=_t("Preparing..."))
+    state = {"pct": 0.05}
+
+    def on_log(message):
+        state["pct"] = min(state["pct"] + 0.04, 0.95)
+        try:
+            progress.progress(state["pct"], text=message)
+        except Exception:
+            pass
+        print(message, flush=True)
+
+    try:
+        report = vi.install(Path(target), log=on_log)
+    except vi.InstallError as exc:
+        progress.empty()
+        st.error(_t("VoxCPM2 installation failed: %s") % exc)
+        st.caption(_t("This does not affect the rest of VideoLingo. You can retry later, "
+                      "or set voxcpm.root in config.yaml to an existing install."))
+        return
+    except Exception as exc:  # unexpected, but must not take the page down
+        progress.empty()
+        st.error(_t("VoxCPM2 installation failed unexpectedly: %s") % exc)
+        return
+
+    worker = vi.worker_script(Path(target))
+    try:
+        worker.write_text(vi.WORKER_SOURCE, encoding="utf-8")
+    except OSError as exc:
+        progress.empty()
+        st.error(_t("VoxCPM2 installed, but the worker script could not be written: %s") % exc)
+        return
+
+    # Point the TTS backend at the new install so it works immediately.
+    try:
+        from core.utils.config_utils import save_settings
+        save_settings({"voxcpm.root": target})
+    except Exception:
+        pass
+
+    progress.progress(1.0, text=_t("Done"))
+    time.sleep(0.4)
+    progress.empty()
+    st.success(_t("VoxCPM2 is installed at %s") % target)
+    st.caption(_t("Restart VideoLingo so the dubbing worker picks up the new install."))
+    _time.sleep(0)
+
+
 def provider_label(name):
     """Label of one TTS provider in the current display language."""
     if name not in TRANSLATED_PROVIDERS:
@@ -170,6 +267,7 @@ def select_tts_method(labels):
         if _root != str(_lko("voxcpm.root", "")):
             save_settings({"voxcpm.root": _root})
             st.rerun()
+        _voxcpm_install_panel(_root)
         _steps = st.slider(t("VoxCPM inference steps"), 4, 30,
                            int(_lko("voxcpm.inference_timesteps", 10)), 1)
         if _steps != int(_lko("voxcpm.inference_timesteps", 10)):
