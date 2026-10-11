@@ -1,8 +1,8 @@
-"""The action row shown under the subtitles and dubbing results.
+"""The action rows shown under the subtitles and dubbing results.
 
-Two groups on one line: the destructive/archiving actions on the left, the
-folder openers on the right. They used to stack one button per row, which read
-as an unfinished form rather than a toolbar.
+Two stacked rows: the destructive/archiving actions on top, the folder openers
+underneath. All four shared one line in an earlier revision and the labels ran
+together; stacked, each row reads as one thing you can do.
 
 `result_actions` returns a dict of *which* button was pressed (True/False per
 key), so the caller can act on it and decide whether to rerun.
@@ -29,7 +29,7 @@ def _button_row(labels: dict, key_prefix: str) -> dict:
 
 
 def result_actions(t, key_prefix: str, allow_delete: bool) -> dict:
-    """The full row. Returns {key: was_pressed} for every button rendered."""
+    """Two stacked rows. Returns {key: was_pressed} for every button rendered."""
     actions = {}
     if allow_delete:
         actions["delete"] = t("Delete dubbing files")
@@ -41,12 +41,9 @@ def result_actions(t, key_prefix: str, allow_delete: bool) -> dict:
     }
 
     clicked = {}
-    left, right = st.columns([3, 2])
-    with left:
-        if actions:
-            clicked.update(_button_row(actions, f"{key_prefix}_act"))
-    with right:
-        clicked.update(_button_row(openers, f"{key_prefix}_open"))
+    if actions:
+        clicked.update(_button_row(actions, f"{key_prefix}_act"))
+    clicked.update(_button_row(openers, f"{key_prefix}_open"))
     return clicked
 
 
