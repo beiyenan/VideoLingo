@@ -22,7 +22,8 @@ def download_subtitle_zip_button(text: str):
         label=text,
         data=zip_buffer,
         file_name="subtitles.zip",
-        mime="application/zip"
+        mime="application/zip",
+        width="stretch"
     )
 
 # st.markdown

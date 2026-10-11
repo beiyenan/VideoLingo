@@ -20,7 +20,7 @@ from core.pipeline import get_steps, truncated_dubbing_lines
 from core.utils import load_key, update_key
 from core.utils.onekeycleanup import cleanup
 from core.utils.delete_retry_dubbing import delete_dubbing_files
-from core.st_utils.folder_buttons import folder_actions, handle_action, open_folder, result_actions
+from core.st_utils.folder_buttons import handle_action, open_folder, result_actions
 from translations.translations import DISPLAY_LANGUAGES, init_display_language, set_display_language
 from core.utils.models import _TEXT_DONE_MARKER, _AUDIO_DONE_MARKER
 
@@ -254,9 +254,10 @@ def text_processing_section():
         else:
             if not audio_only and load_key("burn_subtitles") and os.path.exists(SUB_VIDEO):
                 st.video(SUB_VIDEO)
-            download_subtitle_zip_button(text=t("Download All Srt Files"))
-
-            clicked = result_actions(t, key_prefix="subtitle", allow_delete=False)
+            clicked = result_actions(
+                t, key_prefix="subtitle", allow_delete=False,
+                lead=lambda: download_subtitle_zip_button(text=t("Download All Srt Files")),
+            )
             if handle_action(clicked):
                 st.rerun()
             for key in ("open_output", "open_history"):
