@@ -261,7 +261,7 @@ def text_processing_section():
                 st.rerun()
             for key in ("open_output", "open_history"):
                 if clicked.get(key):
-                    open_folder("subtitle", key)
+                    open_folder(key)
             return True
 
 
@@ -327,7 +327,7 @@ def audio_processing_section():
                 st.rerun()
             for key in ("open_output", "open_history"):
                 if clicked.get(key):
-                    open_folder("dubbing", key, select_dub_video=True)
+                    open_folder(key, select_dub_video=True)
 
 
 # ─── Main ───
