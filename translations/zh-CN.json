@@ -270,5 +270,8 @@
   "VoxCPM2 is installed at %s": "VoxCPM2 已安装到 %s",
   "Restart VideoLingo so the dubbing worker picks up the new install.": "请重启 VideoLingo，让配音 worker 使用新安装的环境。",
   "Open the output folder": "打开 output 文件夹",
-  "Open the history folder": "打开 history 文件夹"
+  "Open the history folder": "打开 history 文件夹",
+  "Custom language": "自定义…",
+  "Type the target language": "输入目标语言",
+  "Pick one of the common languages, or choose 'Custom language' to type any other one": "从常用语言里选，或选“自定义…”自己输入任意语言"
 }

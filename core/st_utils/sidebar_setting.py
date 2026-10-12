@@ -105,6 +105,79 @@ def _language_labels():
     return LANGUAGE_LABELS, "Auto"
 
 
+def _interface_is_chinese():
+    from translations.translations import get_current_language
+
+    return get_current_language() == "zh-CN"
+
+
+# The target language is free text: the translation LLM renders into whatever
+# it can name. These are the languages asked for most often, so they can be
+# picked instead of typed; anything else still goes through the text input.
+TARGET_LANGUAGES = [
+    "简体中文", "繁體中文", "English", "American English", "British English",
+    "日本語", "한국어", "Français", "Deutsch", "Español",
+    "Português", "Русский", "Italiano", "Nederlands", "العربية",
+    "हिन्दी", "ภาษาไทย", "Tiếng Việt", "Bahasa Indonesia", "Türkçe",
+]
+
+# Same language names in Chinese, for a Chinese interface.
+TARGET_LANGUAGE_LABELS_ZH = {
+    "简体中文": "🇨🇳 简体中文", "繁體中文": "🇭🇰 繁體中文",
+    "English": "🇬🇧 英语", "American English": "🇺🇸 英语（美式）",
+    "British English": "🇬🇧 英语（英式）", "日本語": "🇯🇵 日语",
+    "한국어": "🇰🇷 韩语", "Français": "🇫🇷 法语", "Deutsch": "🇩🇪 德语",
+    "Español": "🇪🇸 西班牙语", "Português": "🇵🇹 葡萄牙语", "Русский": "🇷🇺 俄语",
+    "Italiano": "🇮🇹 意大利语", "Nederlands": "🇳🇱 荷兰语", "العربية": "🇸🇦 阿拉伯语",
+    "हिन्दी": "🇮🇳 印地语", "ภาษาไทย": "🇹🇭 泰语", "Tiếng Việt": "🇻🇳 越南语",
+    "Bahasa Indonesia": "🇮🇩 印尼语", "Türkçe": "🇹🇷 土耳其语",
+}
+
+
+def target_language_options():
+    """{label: value} for the target language dropdown, plus the custom entry."""
+    labels = TARGET_LANGUAGE_LABELS_ZH if _interface_is_chinese() else {}
+    return {labels.get(name, name): name for name in TARGET_LANGUAGES}
+
+
+def _target_language_field():
+    """A dropdown of common languages, with a text input for any other one."""
+    from core.utils.config_utils import update_key
+
+    current = str(load_key("target_language") or "")
+    options = target_language_options()
+    if current and current not in options.values():
+        options[current] = current  # a language typed earlier stays visible
+
+    custom = t("Custom language")
+    reverse = dict(zip(options.values(), options.keys()))
+    current_label = reverse.get(current, custom)
+
+    choice = st.selectbox(
+        t("Target Lang"),
+        options=[*options, custom],
+        index=[*options, custom].index(current_label),
+        key="_target_lang_choice",
+        help=t("Pick one of the common languages, or choose 'Custom language' to type any other one"),
+    )
+
+    if choice == custom:
+        typed = st.text_input(
+            t("Type the target language"),
+            value=current,
+            help=t("Input any language in natural language, as long as llm can understand"),
+            key="_target_lang_typed",
+        )
+        if typed != current:
+            update_key("target_language", typed)
+            st.rerun()
+        return
+
+    if options.get(choice, choice) != current:
+        update_key("target_language", options[choice])
+        st.rerun()
+
+
 def recognition_languages(configured=None):
     """Label -> code for the recognition language dropdown: every Qwen3-ASR language."""
     from core.asr_backend.qwen_asr_local import ISO_TO_QWEN
@@ -347,16 +420,7 @@ def page_setting():
                 st.caption(t("MAI-Transcribe-2 is in public preview. Audio is sent to Azure Speech."))
 
         with c2:
-            target_language = st.text_input(
-                t("Target Lang"),
-                value=load_key("target_language"),
-                help=t(
-                    "Input any language in natural language, as long as llm can understand"
-                ),
-            )
-            if target_language != load_key("target_language"):
-                update_key("target_language", target_language)
-                st.rerun()
+            _target_language_field()
 
         configured_style = str(load_key_or("translation_style", "") or "")
         translation_style = st.text_input(
