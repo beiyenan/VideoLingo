@@ -496,6 +496,28 @@ def page_setting():
                 burned_subtitles_settings()
                 subtitle_style_settings()
 
+        keep_original = st.toggle(
+            t("Keep the original audio"),
+            value=bool(load_key_or("keep_original_audio", False)),
+            help=t(
+                "Keep the video's own sound under the dubbing, quieter than it, the way most dubbed clips sound. The dubbing stays the leading voice."
+            ),
+        )
+        if keep_original != bool(load_key_or("keep_original_audio", False)):
+            update_key("keep_original_audio", keep_original, add_missing=True)
+            st.rerun()
+        if keep_original:
+            gain = st.slider(
+                t("Original audio volume (dB)"),
+                min_value=-30.0, max_value=0.0,
+                value=float(load_key_or("original_audio_gain", -14.0)),
+                step=1.0,
+                help=t("How far below the dubbing the original sound sits. -14 dB is a faint presence; -6 dB is clearly audible."),
+            )
+            if gain != float(load_key_or("original_audio_gain", -14.0)):
+                update_key("original_audio_gain", float(gain), add_missing=True)
+                st.rerun()
+
         pause_before_translate = st.toggle(
             t("Pause before translation"),
             value=load_key("pause_before_translate"),

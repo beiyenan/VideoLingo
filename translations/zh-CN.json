@@ -275,5 +275,9 @@
   "Type the target language": "输入目标语言",
   "Pick one of the common languages, or choose 'Custom language' to type any other one": "从常用语言里选，或选“自定义…”自己输入任意语言",
   "Stopped the dubbing worker to free its VRAM. The next dubbing run starts a new one (about 35 seconds to load).": "已停止配音 worker，释放它占用的显存。下次配音会自动重新启动（加载约 35 秒）。",
-  "The dubbing worker is still generating audio, so its VRAM was left alone. Wait for the dubbing to finish, then switch the recognition runtime again.": "配音 worker 正在生成音频，因此没有动它。等配音跑完，再切换一次识别方式即可释放显存。"
+  "The dubbing worker is still generating audio, so its VRAM was left alone. Wait for the dubbing to finish, then switch the recognition runtime again.": "配音 worker 正在生成音频，因此没有动它。等配音跑完，再切换一次识别方式即可释放显存。",
+  "Keep the original audio": "保留原音",
+  "Keep the video's own sound under the dubbing, quieter than it, the way most dubbed clips sound. The dubbing stays the leading voice.": "在配音下方保留视频原声，音量压低到配音之下（像多数网上的配音视频那样），配音仍是主要声音。",
+  "Original audio volume (dB)": "原音音量（dB）",
+  "How far below the dubbing the original sound sits. -14 dB is a faint presence; -6 dB is clearly audible.": "原声相对配音压低多少。-14 dB 是隐约可闻，-6 dB 则明显听得清。"
 }
