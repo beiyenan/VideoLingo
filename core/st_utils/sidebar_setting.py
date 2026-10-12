@@ -78,15 +78,42 @@ LANGUAGE_LABELS = {
     "hu": "🇭🇺 Magyar", "mk": "🇲🇰 Македонски",
 }
 
+# Native spellings say nothing to readers who cannot read them yet - a user
+# picking the recognition language usually cannot read the very language they
+# are trying to recognize. Chinese names are shown when the interface itself
+# is Chinese; other interface languages keep the native labels.
+LANGUAGE_LABELS_ZH = {
+    "en": "🇺🇸 英语", "zh": "🇨🇳 简体中文", "es": "🇪🇸 西班牙语", "ru": "🇷🇺 俄语",
+    "fr": "🇫🇷 法语", "de": "🇩🇪 德语", "it": "🇮🇹 意大利语", "ja": "🇯🇵 日语",
+    "yue": "🇭🇰 粤语", "ko": "🇰🇷 韩语", "pt": "🇵🇹 葡萄牙语", "ar": "🇸🇦 阿拉伯语",
+    "id": "🇮🇩 印尼语", "th": "🇹🇭 泰语", "vi": "🇻🇳 越南语", "tr": "🇹🇷 土耳其语",
+    "hi": "🇮🇳 印地语", "ms": "🇲🇾 马来语", "nl": "🇳🇱 荷兰语", "sv": "🇸🇪 瑞典语",
+    "da": "🇩🇰 丹麦语", "fi": "🇫🇮 芬兰语", "pl": "🇵🇱 波兰语", "cs": "🇨🇿 捷克语",
+    "fil": "🇵🇭 菲律宾语", "fa": "🇮🇷 波斯语", "el": "🇬🇷 希腊语", "ro": "🇷🇴 罗马尼亚语",
+    "hu": "🇭🇺 匈牙利语", "mk": "🇲🇰 马其顿语",
+}
+
+AUTO_LABEL = {"zh-CN": "自动检测"}
+
+
+def _language_labels():
+    from translations.translations import get_current_language
+
+    language = get_current_language()
+    if language == "zh-CN":
+        return LANGUAGE_LABELS_ZH, AUTO_LABEL["zh-CN"]
+    return LANGUAGE_LABELS, "Auto"
+
 
 def recognition_languages(configured=None):
     """Label -> code for the recognition language dropdown: every Qwen3-ASR language."""
     from core.asr_backend.qwen_asr_local import ISO_TO_QWEN
 
-    langs = {"Auto": "auto"}
-    for code in [*LANGUAGE_LABELS, *ISO_TO_QWEN]:
+    labels, auto = _language_labels()
+    langs = {auto: "auto"}
+    for code in [*labels, *ISO_TO_QWEN]:
         if code in ISO_TO_QWEN and code not in langs.values():
-            langs[LANGUAGE_LABELS.get(code, ISO_TO_QWEN[code])] = code
+            langs[labels.get(code, ISO_TO_QWEN[code])] = code
     # A code set by hand in config.yaml (WhisperX and ElevenLabs know more languages) stays selectable
     if configured not in langs.values():
         langs[str(configured)] = configured
