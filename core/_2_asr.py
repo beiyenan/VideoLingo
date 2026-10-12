@@ -34,6 +34,24 @@ def prepare_audio(media_file, media_type, demucs):
     demucs_audio()
     return normalize_audio_volume(_VOCAL_AUDIO_FILE, _VOCAL_AUDIO_FILE, format="mp3")
 
+def _release_dubbing_worker():
+    """Free the VRAM the persistent VoxCPM worker holds before local ASR loads.
+
+    The worker survives the dubbing step by design and keeps its 2B model
+    resident, which leaves too little room for Qwen3-ASR on an 8GB card. A
+    later dubbing run simply starts a new worker.
+    """
+    try:
+        from core.utils import voxcpm_worker
+
+        if not voxcpm_worker.is_running():
+            return
+        state, message = voxcpm_worker.stop()
+        rprint(f"[green]{message}[/green]" if state == "stopped" else f"[yellow]{message}[/yellow]")
+    except Exception as exc:
+        rprint(f"[yellow]Could not stop the dubbing worker: {exc}[/yellow]")
+
+
 @check_file_exists(_2_CLEANED_CHUNKS)
 def transcribe():
     runtime = load_key("whisper.runtime")
@@ -69,6 +87,9 @@ def transcribe():
         return
 
     # 3. Extract audio
+    if runtime == "local":
+        # Only reached on a cache miss: a cached run never loads a model.
+        _release_dubbing_worker()
     if runtime == "mai" and str(whisper.get("mai_provider", "azure")).lower() == "openrouter":
         # OpenRouter's upstream has a roughly 60-second processing timeout.
         segments = split_audio(_RAW_AUDIO_FILE, target_len=120, win=15)

@@ -178,6 +178,29 @@ def _target_language_field():
         st.rerun()
 
 
+def _dubbing_worker_notice():
+    """Local ASR loads a multi-GB model; let go of the idle dubbing worker.
+
+    The worker stays alive after dubbing on purpose (reloading the 2B model
+    per line would cost ~35s each), but that means its VRAM is still taken
+    when the next video is recognised locally. It is restarted on demand, so
+    stopping it costs one reload, not functionality.
+    """
+    from core.utils import voxcpm_worker
+
+    try:
+        if not voxcpm_worker.is_running():
+            return
+        state, _ = voxcpm_worker.stop()
+    except Exception:
+        return  # VoxCPM is optional; a missing install must not break settings
+
+    if state == "busy":
+        st.warning(t("The dubbing worker is still generating audio, so its VRAM was left alone. Wait for the dubbing to finish, then switch the recognition runtime again."))
+    elif state == "stopped":
+        st.success(t("Stopped the dubbing worker to free its VRAM. The next dubbing run starts a new one (about 35 seconds to load)."))
+
+
 def recognition_languages(configured=None):
     """Label -> code for the recognition language dropdown: every Qwen3-ASR language."""
     from core.asr_backend.qwen_asr_local import ISO_TO_QWEN
@@ -349,6 +372,7 @@ def page_setting():
             update_key("whisper.runtime", runtime)
             st.rerun()
         if runtime == "local":
+            _dubbing_worker_notice()
             backends = ["qwen", "whisperx"]
             configured_backend = load_key_or("whisper.backend", "qwen")
             backend = st.selectbox(

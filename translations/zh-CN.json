@@ -273,5 +273,7 @@
   "Open the history folder": "打开 history 文件夹",
   "Custom language": "自定义…",
   "Type the target language": "输入目标语言",
-  "Pick one of the common languages, or choose 'Custom language' to type any other one": "从常用语言里选，或选“自定义…”自己输入任意语言"
+  "Pick one of the common languages, or choose 'Custom language' to type any other one": "从常用语言里选，或选“自定义…”自己输入任意语言",
+  "Stopped the dubbing worker to free its VRAM. The next dubbing run starts a new one (about 35 seconds to load).": "已停止配音 worker，释放它占用的显存。下次配音会自动重新启动（加载约 35 秒）。",
+  "The dubbing worker is still generating audio, so its VRAM was left alone. Wait for the dubbing to finish, then switch the recognition runtime again.": "配音 worker 正在生成音频，因此没有动它。等配音跑完，再切换一次识别方式即可释放显存。"
 }
