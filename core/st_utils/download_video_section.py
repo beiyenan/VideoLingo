@@ -6,6 +6,7 @@ from time import sleep
 import streamlit as st
 from core._1_ytdlp import download_video_ytdlp, find_media_file, find_subtitle_file, needs_cookies, write_input_manifest
 from core._2_import_subtitles import add_input_subtitles, read_cues
+from core.st_utils.folder_buttons import history_button
 from core.utils.models import _2_CLEANED_CHUNKS
 from core.utils import *
 from translations.translations import translate as t
@@ -201,4 +202,8 @@ def download_video_section():
                             t("The subtitles are translated with their own lines and times. For a video with these subtitles, upload the video first and add the subtitles below it"),
                             new_input=True):
             st.rerun()
+
+        # After archiving, output is empty and the page lands back here; the
+        # archived work only lives in 'history', so offer a way into it.
+        history_button(t)
         return False

@@ -70,6 +70,19 @@ def result_actions(t, key_prefix: str, allow_delete: bool, lead=None) -> dict:
     return clicked
 
 
+def history_button(t, key_prefix: str = "init") -> bool:
+    """A single history opener, for screens without result actions.
+
+    The initial screen has no output yet, so once everything was archived
+    there is no way back into 'history' - this button is that way back.
+    """
+    clicked = _button_row({"open_history": t("Open the history folder")}, f"{key_prefix}_open")
+    if clicked.get("open_history"):
+        open_folder("open_history")
+        return True
+    return False
+
+
 def handle_action(clicked: dict, delete_handler=None) -> bool:
     """Run the action whose button was pressed. Returns True if one fired."""
     if clicked.get("delete") and delete_handler is not None:
