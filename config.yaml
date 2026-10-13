@@ -61,6 +61,10 @@ whisper:
 # Whether to burn subtitles into the video
 burn_subtitles: false
 
+# Keep the video's own sound under the dubbing, and how far below it (dB)
+keep_original_audio: false
+original_audio_gain: -14
+
 ## ======================== Advanced Settings ======================== ##
 # *🔬 h264_nvenc GPU acceleration for ffmpeg, make sure your GPU supports it
 ffmpeg_gpu: false
